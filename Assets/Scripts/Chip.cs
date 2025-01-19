@@ -1,23 +1,20 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Chip : MonoBehaviour
 {
-    public Sprite[] sprites;
-    // Start is called before the first frame update
-    void Start()
+    public Sprite[] sprites; // Çip görselleri
+
+    private int colorID; // Çipin renk ID'si
+
+    public void Initialize(int colorID)
     {
-      
+        this.colorID = colorID; // Renk ID'sini sakla
+        GetComponent<SpriteRenderer>().sprite = sprites[colorID]; // Sprite'i güncelle
     }
 
-    public void UpdateChipColor(int colorID)
+    public void isSelected(bool isSelected)
     {
-        GetComponent<SpriteRenderer>().sprite = sprites[colorID];
+        GetComponent<SpriteRenderer>().color =  isSelected ? Color.black  : Color.white;
     }
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    public int GetColorID() => colorID; // Çipin renk ID'sini döndür
 }

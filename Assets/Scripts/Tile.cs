@@ -2,13 +2,12 @@ using UnityEngine;
 
 public class Tile : MonoBehaviour
 {
-    private Chip chip; // Tile içindeki Chip
+    private Chip chip;
 
-    public void SetChip(GameObject newChip,int colorID)
+    public void SetChip(GameObject newChip)
     {
         chip = newChip.GetComponent<Chip>();
-        chip.transform.position = transform.position; // Chip'i Tile'ın konumuna taşı
-        chip.UpdateChipColor(colorID);
+        chip.transform.position = transform.position;
     }
 
     public Chip GetChip() => chip;
@@ -17,16 +16,6 @@ public class Tile : MonoBehaviour
 
     public void ClearChip()
     {
-        chip = null; // Chip referansını temizle
-    }
-
-    // Tile içindeki Chip'i yok et
-    public void DestroyChip()
-    {
-        if (chip != null)
-        {
-            Destroy(chip.gameObject); // Chip'i yok et
-            ClearChip(); // Tile'daki Chip referansını temizle
-        }
+        chip = null;
     }
 }

@@ -10,7 +10,6 @@ public class InputManager : MonoBehaviour
     private int currentColorID; // Seçilen çiplerin renk ID'si
     private bool isDragging = false; // Mouse basılı mı?
     private Vector2Int? lastTilePosition = null; // Son ziyaret edilen Tile'ın pozisyonu
-    private Vector2Int? direction = null; // Hareket yönü
 
     void Update()
     {
@@ -63,14 +62,15 @@ public class InputManager : MonoBehaviour
 
         if (chip != null && chip.GetColorID() == currentColorID)
         {
-            if (selectedChips.Contains(chip)) // Daha önce seçilmiş bir çip mi?
-            {
-                RemoveChipsUntil(chip); // Geri dönülen çipin üstündeki çipleri iptal et
-            }
-            else if (IsNeighbor(currentTilePosition)) // Komşu ve yeni bir çip mi?
+            // Eğer iki çip arasında link varsa, aradaki çipleri de ekle
+            if (AddIntermediateChips(lastTilePosition.Value, currentTilePosition))
             {
                 AddChipToStack(chip); // Çipi Stack'e ekle
                 lastTilePosition = currentTilePosition; // Yeni Tile pozisyonunu kaydet
+            }
+            else
+            {
+                Debug.LogWarning("Bağlantı zinciri bulunamadı. Seçim yapılamaz.");
             }
         }
     }
@@ -99,17 +99,6 @@ public class InputManager : MonoBehaviour
         Debug.Log($"Çip seçildi: {chip.transform.position}");
     }
 
-    void RemoveChipsUntil(Chip targetChip)
-    {
-        // Stack'in tepesindeki çip, hedef çip olana kadar çipleri kaldır
-        while (selectedChips.Count > 0 && selectedChips.Peek() != targetChip)
-        {
-            Chip removedChip = selectedChips.Pop();
-            removedChip.isSelected(false); // Çipin seçimini kaldır
-            Debug.Log($"Çip geri alındı: {removedChip.transform.position}");
-        }
-    }
-
     void ClearSelection()
     {
         while (selectedChips.Count > 0)
@@ -118,23 +107,58 @@ public class InputManager : MonoBehaviour
             chip.isSelected(false); // Tüm çiplerin seçimini kaldır
         }
         lastTilePosition = null; // Son Tile pozisyonunu sıfırla
-        direction = null; // Hareket yönünü sıfırla
         isDragging = false;
         currentColorID = -1;
     }
 
-    bool IsNeighbor(Vector2Int currentTilePosition)
+    bool AddIntermediateChips(Vector2Int start, Vector2Int end)
     {
-        if (selectedChips.Count == 0) return false;
+        bool canLink = true;
 
-        Chip lastChip = selectedChips.Peek();
-        Vector3 lastChipPosition = lastChip.transform.position;
+        // Yalnızca yatay veya dikey hareketler kontrol edilir
+        if (start.x == end.x) // Dikey hareket
+        {
+            int minY = Mathf.Min(start.y, end.y);
+            int maxY = Mathf.Max(start.y, end.y);
 
-        int lastX = Mathf.FloorToInt(lastChipPosition.x);
-        int lastY = Mathf.FloorToInt(lastChipPosition.y);
+            for (int y = minY + 1; y < maxY; y++) // Aradaki çipleri kontrol et
+            {
+                Chip chip = boardManager.GetChipAt(start.x, y);
+                if (chip == null || chip.GetColorID() != currentColorID) // Aynı renk değilse
+                {
+                    canLink = false; // Link mümkün değil
+                    break;
+                }
+                if (!selectedChips.Contains(chip)) // Daha önce seçilmediyse
+                {
+                    AddChipToStack(chip); // Çipi Stack'e ekle
+                }
+            }
+        }
+        else if (start.y == end.y) // Yatay hareket
+        {
+            int minX = Mathf.Min(start.x, end.x);
+            int maxX = Mathf.Max(start.x, end.x);
 
-        // Yukarı, aşağı, sağ, sol komşuları kontrol et
-        return (currentTilePosition.x == lastX && Mathf.Abs(currentTilePosition.y - lastY) == 1) || // Yukarı veya aşağı
-               (currentTilePosition.y == lastY && Mathf.Abs(currentTilePosition.x - lastX) == 1);   // Sağ veya sol
+            for (int x = minX + 1; x < maxX; x++) // Aradaki çipleri kontrol et
+            {
+                Chip chip = boardManager.GetChipAt(x, start.y);
+                if (chip == null || chip.GetColorID() != currentColorID) // Aynı renk değilse
+                {
+                    canLink = false; // Link mümkün değil
+                    break;
+                }
+                if (!selectedChips.Contains(chip)) // Daha önce seçilmediyse
+                {
+                    AddChipToStack(chip); // Çipi Stack'e ekle
+                }
+            }
+        }
+        else
+        {
+            canLink = false; // Köşegen hareketler desteklenmez
+        }
+
+        return canLink;
     }
 }

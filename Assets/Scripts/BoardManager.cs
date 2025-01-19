@@ -39,35 +39,28 @@ public class BoardManager : MonoBehaviour
     // Belirli bir Tile için rastgele bir Chip oluştur
     void SpawnChipForTile(Tile tile)
     {
-        GameObject chipObject = chipPool.GetObject(); // Havuzdan çip al
+        GameObject chipObject = chipPool.GetObject();
+        chipObject.SetActive(true); // Çipi aktif hale getir
         Chip chip = chipObject.GetComponent<Chip>();
 
-        // Rastgele bir renk ID'si oluştur ve çipi başlat
-        int randomColorID = Random.Range(0, ChipSprites.Length);
+        // Rastgele bir renk belirle ve çipi başlat
+        int randomColorID = Random.Range(0, 4);
         chip.Initialize(randomColorID);
 
         // Çipi Tile'a yerleştir
         tile.SetChip(chipObject);
     }
 
+
+
     // Belirtilen koordinattaki Chip'i yok et
     public void DestroyChip(Chip chip)
     {
-        for (int row = 0; row < rows; row++)
-        {
-            for (int col = 0; col < columns; col++)
-            {
-                Tile tile = tiles[row, col];
-                if (tile != null && tile.GetChip() == chip)
-                {
-                    tile.ClearChip(); // Tile'dan çipi kaldır
-                    chipPool.ReturnObject(chip.gameObject); // Çipi Object Pool'a geri gönder
-                    Debug.Log($"Çip yok edildi: {chip.transform.position}");
-                    return;
-                }
-            }
-        }
+        chip.isSelected(false); // Çipin seçili durumunu kaldır
+        chip.gameObject.SetActive(false); // Çipi pasif hale getir
+        chipPool.ReturnObject(chip.gameObject); // Çipi havuza geri gönder
     }
+
 
     public Chip GetChipAt(int x, int y)
     {

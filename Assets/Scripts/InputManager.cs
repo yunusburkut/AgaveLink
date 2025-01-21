@@ -6,10 +6,14 @@ public class InputManager : MonoBehaviour
     private Tile startTile;               // İlk seçilen Tile
     private Tile currentTile;             // Şu anda seçili olan Tile
     private List<Tile> linkedTiles = new List<Tile>(); // Bağlı Tile'ların listesi
+    private Dictionary<Tile, Vector3> originalPositions = new Dictionary<Tile, Vector3>(); // Komşuların orijinal pozisyonlarını saklar
     private bool isDragging = false;      // Kullanıcının drag yapıp yapmadığını kontrol eder
 
     public BoardManager boardManager;
     public Color selectedColor = Color.gray; // Seçilen Tile'ların geçici rengi
+
+    public float pushDistance = 0.2f;     // İtilme mesafesi
+    public float moveDuration = 0.2f;    // Hareket süresi (smooth hareket için)
 
     private void Update()
     {
@@ -38,6 +42,7 @@ public class InputManager : MonoBehaviour
             startTile = tile;                   // İlk seçilen Tile
             currentTile = tile;                 // Şu anda aktif olan Tile
             AddTileToLink(tile);                // Tile'ı link'e ekle
+            PushNeighbors();                    // Komşuları ittir
             isDragging = true;                  // Drag işlemini başlat
         }
     }
@@ -65,7 +70,8 @@ public class InputManager : MonoBehaviour
             // İleri gitme durumu: Kullanıcı komşu ve aynı renkteki bir Tile seçerse
             else if (!linkedTiles.Contains(tile) && currentTile.Neighbors.Contains(tile))
             {
-                AddTileToLink(tile); // Yeni Tile'ı link'e ekle
+                AddTileToLink(tile);      // Yeni Tile'ı link'e ekle
+                PushNeighbors();         // Komşuları ittir
             }
 
             currentTile = tile; // Şu anda aktif olan Tile'ı güncelle
@@ -85,6 +91,9 @@ public class InputManager : MonoBehaviour
         {
             ResetTileColors(); // Geçerli bir link oluşmadıysa renkleri sıfırla
         }
+
+        // Hareket etmiş komşuları sıfırla
+        ResetMovedNeighbors();
 
         // Seçim işlemini sıfırla
         linkedTiles.Clear();
@@ -119,6 +128,9 @@ public class InputManager : MonoBehaviour
             linkedTiles.RemoveAt(linkedTiles.Count - 1);        // Son Tile'ı listeden çıkar
             lastTile.ResetChipColor();                         // Çipin rengini eski haline döndür
         }
+
+        // Son eleman değişmiş olabilir, komşuları yeniden düzenle
+        PushNeighbors();
     }
 
     private void ResetTileColors()
@@ -129,37 +141,86 @@ public class InputManager : MonoBehaviour
         }
     }
 
+    // Son seçilen Tile'ın komşularını ittir
+    private void PushNeighbors()
+    {
+        // Daha önce hareket etmiş komşuları sıfırla
+        ResetMovedNeighbors();
+
+        // Eğer linkedTiles listesi boşsa işlem yapma
+        if (linkedTiles.Count == 0) return;
+
+        // LinkedTiles listesinin son elemanını al
+        Tile lastLinkedTile = linkedTiles[linkedTiles.Count - 1];
+
+        foreach (Tile neighbor in lastLinkedTile.Neighbors)
+        {
+            // Eğer komşu zaten linklenmişse (linkedTiles listesinde varsa), işlem yapma
+            if (linkedTiles.Contains(neighbor))
+            {
+                continue;
+            }
+
+            if (neighbor.CurrentChip != null)
+            {
+                // Komşunun orijinal pozisyonunu kaydet
+                if (!originalPositions.ContainsKey(neighbor))
+                {
+                    originalPositions[neighbor] = neighbor.CurrentChip.transform.localPosition;
+                }
+
+                // Hareket yönünü hesapla (lastLinkedTile merkezine göre normalize)
+                Vector3 direction = (neighbor.transform.position - lastLinkedTile.transform.position).normalized;
+
+                // Çipi hareket ettir
+                neighbor.CurrentChip.transform.localPosition += direction * pushDistance;
+            }
+        }
+    }
+
+    // Daha önce hareket etmiş komşuların pozisyonlarını sıfırla
+    private void ResetMovedNeighbors()
+    {
+        foreach (var entry in originalPositions)
+        {
+            Tile neighbor = entry.Key;
+            Vector3 originalPosition = entry.Value;
+
+            if (neighbor.CurrentChip != null)
+            {
+                neighbor.CurrentChip.transform.localPosition = originalPosition; // Orijinal pozisyona dön
+            }
+        }
+
+        originalPositions.Clear(); // Pozisyon verilerini temizle
+    }
+
     // Başlangıç Tile'ından bağlantılı ve komşu olup olmadığını kontrol eder
     private bool IsTileLinkable(Tile tile)
     {
-        // Eğer Tile, başlangıç Tile'dan bağlantılı değilse false döner
         if (!IsTileConnected(startTile, tile, new HashSet<Tile>()))
         {
             return false;
         }
 
-        // Eğer Tile, şu anki Tile'ın komşusu değilse false döner
         if (!currentTile.Neighbors.Contains(tile))
         {
             return false;
         }
 
-        return true; // Tile, hem bağlantılı hem de komşu
+        return true;
     }
 
-    // Rekürsif olarak bir Tile'ın başlangıç Tile'ından bağlantılı olup olmadığını kontrol eder
     private bool IsTileConnected(Tile origin, Tile target, HashSet<Tile> visited)
     {
-        if (origin == target) return true; // Eğer aynı Tile ise bağlantılıdır
+        if (origin == target) return true;
 
-        visited.Add(origin); // Bu Tile'ı ziyaret edilmiş olarak işaretle
+        visited.Add(origin);
 
         foreach (Tile neighbor in origin.Neighbors)
         {
-            // Eğer komşu Tile daha önce ziyaret edilmediyse ve aynı renkteyse
             if (!visited.Contains(neighbor) && neighbor.ColorID == origin.ColorID)
             {
-                // Rekürsif olarak bağlantıyı kontrol et
                 if (IsTileConnected(neighbor, target, visited))
                 {
                     return true;
@@ -167,6 +228,6 @@ public class InputManager : MonoBehaviour
             }
         }
 
-        return false; // Bağlantı bulunamadı
+        return false;
     }
 }

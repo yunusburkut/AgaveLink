@@ -283,7 +283,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boardManager: {fileID: 1199896663}
-  selectedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  selectedColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!4 &1011678332
 Transform:
   m_ObjectHideFlags: 0

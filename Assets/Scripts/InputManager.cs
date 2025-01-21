@@ -51,7 +51,7 @@ public class InputManager : MonoBehaviour
         // Eğer yeni bir Tile seçildiyse
         if (tile != null && tile.ColorID == startTile.ColorID)
         {
-            // Eğer Tile, linklenebilir durumda değilse (başlangıç Tile'ından bağlantılı değilse)
+            // Eğer Tile, başlangıç Tile'ından bağlantılı değilse veya komşu değilse
             if (!IsTileLinkable(tile))
             {
                 return; // Seçime izin verme
@@ -129,10 +129,22 @@ public class InputManager : MonoBehaviour
         }
     }
 
-    // Başlangıç Tile'ından bağlantılı olup olmadığını kontrol eder
+    // Başlangıç Tile'ından bağlantılı ve komşu olup olmadığını kontrol eder
     private bool IsTileLinkable(Tile tile)
     {
-        return IsTileConnected(startTile, tile, new HashSet<Tile>());
+        // Eğer Tile, başlangıç Tile'dan bağlantılı değilse false döner
+        if (!IsTileConnected(startTile, tile, new HashSet<Tile>()))
+        {
+            return false;
+        }
+
+        // Eğer Tile, şu anki Tile'ın komşusu değilse false döner
+        if (!currentTile.Neighbors.Contains(tile))
+        {
+            return false;
+        }
+
+        return true; // Tile, hem bağlantılı hem de komşu
     }
 
     // Rekürsif olarak bir Tile'ın başlangıç Tile'ından bağlantılı olup olmadığını kontrol eder

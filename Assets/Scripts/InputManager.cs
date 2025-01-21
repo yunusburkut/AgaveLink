@@ -1,164 +1,160 @@
-using System.Collections.Generic;
 using UnityEngine;
+using System.Collections.Generic;
 
 public class InputManager : MonoBehaviour
 {
-    public Camera mainCamera;
+    private Tile startTile;               // İlk seçilen Tile
+    private Tile currentTile;             // Şu anda seçili olan Tile
+    private List<Tile> linkedTiles = new List<Tile>(); // Bağlı Tile'ların listesi
+    private bool isDragging = false;      // Kullanıcının drag yapıp yapmadığını kontrol eder
+
     public BoardManager boardManager;
+    public Color selectedColor = Color.gray; // Seçilen Tile'ların geçici rengi
 
-    private Stack<Chip> selectedChips = new Stack<Chip>(); // Seçilen çipler için Stack
-    private int currentColorID; // Seçilen çiplerin renk ID'si
-    private bool isDragging = false; // Mouse basılı mı?
-    private Vector2Int? lastTilePosition = null; // Son ziyaret edilen Tile'ın pozisyonu
-
-    void Update()
+    private void Update()
     {
-        if (Input.GetMouseButtonDown(0)) // Mouse sol tuşuna basıldı
+        if (Input.GetMouseButtonDown(0))
         {
-            StartDragging();
+            OnInputStart();
         }
 
-        if (Input.GetMouseButton(0) && isDragging) // Mouse basılı tutuluyor
+        if (isDragging)
         {
-            ContinueDragging();
+            OnInputDrag();
         }
 
-        if (Input.GetMouseButtonUp(0) && isDragging) // Mouse sol tuşu bırakıldı
+        if (Input.GetMouseButtonUp(0))
         {
-            StopDragging();
+            OnInputEnd();
         }
     }
 
-    void StartDragging()
+    private void OnInputStart()
     {
-        Vector3 worldPosition = mainCamera.ScreenToWorldPoint(Input.mousePosition);
-        int x = Mathf.FloorToInt(worldPosition.x);
-        int y = Mathf.FloorToInt(worldPosition.y);
+        Tile tile = GetTileUnderMouse();
 
-        Chip startChip = boardManager.GetChipAt(x, y);
-        if (startChip != null)
+        if (tile != null && tile.ColorID != -1)
         {
-            currentColorID = startChip.GetColorID(); // İlk çipin renk ID'sini belirle
-            AddChipToStack(startChip); // İlk çipi Stack'e ekle
-            lastTilePosition = new Vector2Int(x, y); // İlk Tile pozisyonunu kaydet
-            isDragging = true;
+            startTile = tile;                   // İlk seçilen Tile
+            currentTile = tile;                 // Şu anda aktif olan Tile
+            AddTileToLink(tile);                // Tile'ı link'e ekle
+            isDragging = true;                  // Drag işlemini başlat
         }
     }
 
-    void ContinueDragging()
+    private void OnInputDrag()
     {
-        Vector3 worldPosition = mainCamera.ScreenToWorldPoint(Input.mousePosition);
-        int x = Mathf.FloorToInt(worldPosition.x);
-        int y = Mathf.FloorToInt(worldPosition.y);
+        Tile tile = GetTileUnderMouse();
 
-        // Eğer yeni bir Tile'a geçilmediyse işlemi durdur
-        if (lastTilePosition != null && lastTilePosition.Value == new Vector2Int(x, y))
+        if (tile == currentTile) return; // Aynı Tile'a tekrar işlem yapma
+
+        // Eğer yeni bir Tile seçildiyse
+        if (tile != null && tile.ColorID == startTile.ColorID)
         {
-            return; // Aynı Tile, işlemi durdur
-        }
-
-        Vector2Int currentTilePosition = new Vector2Int(x, y);
-        Chip chip = boardManager.GetChipAt(x, y);
-
-        if (chip != null && chip.GetColorID() == currentColorID)
-        {
-            // Eğer iki çip arasında link varsa, aradaki çipleri de ekle
-            if (AddIntermediateChips(lastTilePosition.Value, currentTilePosition))
+            // Eğer Tile, linklenebilir durumda değilse (başlangıç Tile'ından bağlantılı değilse)
+            if (!IsTileLinkable(tile))
             {
-                AddChipToStack(chip); // Çipi Stack'e ekle
-                lastTilePosition = currentTilePosition; // Yeni Tile pozisyonunu kaydet
+                return; // Seçime izin verme
             }
-            else
+
+            // Geri gitme durumu: Kullanıcı bir önceki Tile'a dönerse
+            if (linkedTiles.Count > 1 && tile == linkedTiles[linkedTiles.Count - 2])
             {
-                Debug.LogWarning("Bağlantı zinciri bulunamadı. Seçim yapılamaz.");
+                RemoveLastTileFromLink(); // Son Tile'ı listeden çıkar
             }
-        }
-    }
-
-    void StopDragging()
-    {
-        if (selectedChips.Count > 1) // En az iki çip seçilmişse
-        {
-            foreach (Chip chip in selectedChips)
+            // İleri gitme durumu: Kullanıcı komşu ve aynı renkteki bir Tile seçerse
+            else if (!linkedTiles.Contains(tile) && currentTile.Neighbors.Contains(tile))
             {
-                boardManager.DestroyChip(chip); // Çipleri yok et
+                AddTileToLink(tile); // Yeni Tile'ı link'e ekle
             }
-        }
-        else
-        {
-            Debug.LogWarning("Yeterli çip seçilmedi, işlem iptal edildi!");
-        }
 
-        ClearSelection(); // Stack'i temizle
+            currentTile = tile; // Şu anda aktif olan Tile'ı güncelle
+        }
     }
 
-    void AddChipToStack(Chip chip)
+    private void OnInputEnd()
     {
-        chip.isSelected(true); // Çipi seçili olarak işaretle
-        selectedChips.Push(chip); // Çipi Stack'e ekle
-        Debug.Log($"Çip seçildi: {chip.transform.position}");
-    }
-
-    void ClearSelection()
-    {
-        while (selectedChips.Count > 0)
-        {
-            Chip chip = selectedChips.Pop();
-            chip.isSelected(false); // Tüm çiplerin seçimini kaldır
-        }
-        lastTilePosition = null; // Son Tile pozisyonunu sıfırla
         isDragging = false;
-        currentColorID = -1;
-    }
 
-    bool AddIntermediateChips(Vector2Int start, Vector2Int end)
-    {
-        bool canLink = true;
-
-        // Yalnızca yatay veya dikey hareketler kontrol edilir
-        if (start.x == end.x) // Dikey hareket
+        // Geçerli bir link oluşturulmuş mu? (en az 3 Tile)
+        if (linkedTiles.Count >= 3)
         {
-            int minY = Mathf.Min(start.y, end.y);
-            int maxY = Mathf.Max(start.y, end.y);
-
-            for (int y = minY + 1; y < maxY; y++) // Aradaki çipleri kontrol et
-            {
-                Chip chip = boardManager.GetChipAt(start.x, y);
-                if (chip == null || chip.GetColorID() != currentColorID) // Aynı renk değilse
-                {
-                    canLink = false; // Link mümkün değil
-                    break;
-                }
-                if (!selectedChips.Contains(chip)) // Daha önce seçilmediyse
-                {
-                    AddChipToStack(chip); // Çipi Stack'e ekle
-                }
-            }
-        }
-        else if (start.y == end.y) // Yatay hareket
-        {
-            int minX = Mathf.Min(start.x, end.x);
-            int maxX = Mathf.Max(start.x, end.x);
-
-            for (int x = minX + 1; x < maxX; x++) // Aradaki çipleri kontrol et
-            {
-                Chip chip = boardManager.GetChipAt(x, start.y);
-                if (chip == null || chip.GetColorID() != currentColorID) // Aynı renk değilse
-                {
-                    canLink = false; // Link mümkün değil
-                    break;
-                }
-                if (!selectedChips.Contains(chip)) // Daha önce seçilmediyse
-                {
-                    AddChipToStack(chip); // Çipi Stack'e ekle
-                }
-            }
+            boardManager.DestroyTiles(linkedTiles); // BoardManager'a link'i gönder ve yok et
         }
         else
         {
-            canLink = false; // Köşegen hareketler desteklenmez
+            ResetTileColors(); // Geçerli bir link oluşmadıysa renkleri sıfırla
         }
 
-        return canLink;
+        // Seçim işlemini sıfırla
+        linkedTiles.Clear();
+        startTile = null;
+        currentTile = null;
+    }
+
+    private Tile GetTileUnderMouse()
+    {
+        Vector3 mouseWorldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector2Int gridPosition = boardManager.GetGridPositionFromWorld(mouseWorldPosition);
+
+        if (boardManager.IsInsideBoard(gridPosition))
+        {
+            return boardManager.GetTileAtPosition(gridPosition);
+        }
+
+        return null;
+    }
+
+    private void AddTileToLink(Tile tile)
+    {
+        linkedTiles.Add(tile);                   // Tile'ı listeye ekle
+        tile.SetChipTemporaryColor(selectedColor); // Çipin rengini geçici olarak değiştir
+    }
+
+    private void RemoveLastTileFromLink()
+    {
+        if (linkedTiles.Count > 0)
+        {
+            Tile lastTile = linkedTiles[linkedTiles.Count - 1]; // Son Tile'ı al
+            linkedTiles.RemoveAt(linkedTiles.Count - 1);        // Son Tile'ı listeden çıkar
+            lastTile.ResetChipColor();                         // Çipin rengini eski haline döndür
+        }
+    }
+
+    private void ResetTileColors()
+    {
+        foreach (Tile tile in linkedTiles)
+        {
+            tile.ResetChipColor();
+        }
+    }
+
+    // Başlangıç Tile'ından bağlantılı olup olmadığını kontrol eder
+    private bool IsTileLinkable(Tile tile)
+    {
+        return IsTileConnected(startTile, tile, new HashSet<Tile>());
+    }
+
+    // Rekürsif olarak bir Tile'ın başlangıç Tile'ından bağlantılı olup olmadığını kontrol eder
+    private bool IsTileConnected(Tile origin, Tile target, HashSet<Tile> visited)
+    {
+        if (origin == target) return true; // Eğer aynı Tile ise bağlantılıdır
+
+        visited.Add(origin); // Bu Tile'ı ziyaret edilmiş olarak işaretle
+
+        foreach (Tile neighbor in origin.Neighbors)
+        {
+            // Eğer komşu Tile daha önce ziyaret edilmediyse ve aynı renkteyse
+            if (!visited.Contains(neighbor) && neighbor.ColorID == origin.ColorID)
+            {
+                // Rekürsif olarak bağlantıyı kontrol et
+                if (IsTileConnected(neighbor, target, visited))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false; // Bağlantı bulunamadı
     }
 }

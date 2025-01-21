@@ -1,92 +1,112 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class BoardManager : MonoBehaviour
 {
-    public int rows = 8;
-    public int columns = 8;
-    public SimpleObjectPool chipPool; // Çipler için Object Pool
-    public Sprite[] ChipSprites; // Çiplerin görselleri
-    public GameObject tilePrefab; // Tile prefab
+    public int Width = 8;
+    public int Height = 8;
+    public GameObject tilePrefab;
+    public Transform boardParent;
 
-    private Tile[,] tiles; // Oyun tahtasındaki Tile'lar
+    private Tile[,] board;
 
-    void Start()
+    private void Start()
     {
-        InitializeBoard(); // Tahtayı başlat
+        InitializeBoard();
     }
 
-    // Tahta başlangıç durumu
-    void InitializeBoard()
+    private void InitializeBoard()
     {
-        tiles = new Tile[rows, columns];
+        board = new Tile[Width, Height];
 
-        for (int row = 0; row < rows; row++)
+        for (int x = 0; x < Width; x++)
         {
-            for (int col = 0; col < columns; col++)
+            for (int y = 0; y < Height; y++)
             {
-                // Tile oluştur
-                Vector3 position = new Vector3(col, row, 0);
-                GameObject tileObject = Instantiate(tilePrefab, position, Quaternion.identity);
-                Tile tile = tileObject.GetComponent<Tile>();
-                tiles[row, col] = tile;
+                GameObject tileObject = Instantiate(tilePrefab, boardParent);
+                tileObject.transform.position = new Vector2(x, y);
 
-                // Tile'ı doldur
-                SpawnChipForTile(tile);
+                Tile tile = tileObject.GetComponent<Tile>();
+                tile.Initialize(new Vector2Int(x, y), Random.Range(0, 4)); // Rastgele renk ata
+                board[x, y] = tile;
             }
         }
+
+        // Komşuları hesapla
+        CalculateNeighbors();
     }
 
-    // Belirli bir Tile için rastgele bir Chip oluştur
-    void SpawnChipForTile(Tile tile)
+    private void CalculateNeighbors()
     {
-        GameObject chipObject = chipPool.GetObject();
-        chipObject.SetActive(true); // Çipi aktif hale getir
-        Chip chip = chipObject.GetComponent<Chip>();
-
-        // Rastgele bir renk belirle ve çipi başlat
-        int randomColorID = Random.Range(0, 4);
-        chip.Initialize(randomColorID);
-
-        // Çipi Tile'a yerleştir
-        tile.SetChip(chipObject);
-    }
-
-
-
-    // Belirtilen koordinattaki Chip'i yok et
-    public void DestroyChip(Chip chip)
-    {
-        chip.isSelected(false); // Çipin seçili durumunu kaldır
-        chip.gameObject.SetActive(false); // Çipi pasif hale getir
-        chipPool.ReturnObject(chip.gameObject); // Çipi havuza geri gönder
-    }
-
-
-    public Chip GetChipAt(int x, int y)
-    {
-        if (x >= 0 && x < columns && y >= 0 && y < rows)
+        Vector2Int[] directions = new Vector2Int[]
         {
-            Tile tile = tiles[y, x];
-            return tile?.GetChip(); // Tile'daki çipi döndür
-        }
-        return null;
-    }
+            Vector2Int.up,    // Yukarı
+            Vector2Int.down,  // Aşağı
+            Vector2Int.left,  // Sol
+            Vector2Int.right  // Sağ
+        };
 
-
-    // Boş alanları doldur
-    public void RefillBoard()
-    {
-        for (int row = 0; row < rows; row++)
+        for (int x = 0; x < Width; x++)
         {
-            for (int col = 0; col < columns; col++)
+            for (int y = 0; y < Height; y++)
             {
-                Tile tile = tiles[row, col];
-                if (tile != null && tile.IsEmpty()) // Tile boş mu?
+                Tile tile = board[x, y];
+
+                foreach (Vector2Int dir in directions)
                 {
-                    SpawnChipForTile(tile); // Yeni çip oluştur ve Tile'ı doldur
+                    Vector2Int neighborPos = tile.Position + dir;
+                    if (IsInsideBoard(neighborPos))
+                    {
+                        Tile neighbor = GetTileAtPosition(neighborPos);
+                        tile.AddNeighbor(neighbor);
+                    }
                 }
             }
         }
-        Debug.Log("RefillBoard: Boş alanlar dolduruldu.");
+    }
+
+    public bool IsInsideBoard(Vector2Int position)
+    {
+        return position.x >= 0 && position.x < Width && position.y >= 0 && position.y < Height;
+    }
+
+    public Tile GetTileAtPosition(Vector2Int position)
+    {
+        return board[position.x, position.y];
+    }
+
+    public bool AreNeighbors(Tile a, Tile b)
+    {
+        return a.Neighbors.Contains(b); // Komşular listesine göre kontrol
+    }
+
+    public void DestroyTiles(List<Tile> tilesToDestroy)
+    {
+        foreach (Tile tile in tilesToDestroy)
+        {
+            tile.SetColorID(-1); // Tile'ı boşalt
+        }
+       // FillEmptyTiles(); // Boşlukları doldur
+    }
+    public Vector2Int GetGridPositionFromWorld(Vector3 worldPosition)
+    {
+        int x = Mathf.FloorToInt(worldPosition.x);
+        int y = Mathf.FloorToInt(worldPosition.y);
+        return new Vector2Int(x, y);
+    }
+
+    private void FillEmptyTiles()
+    {
+        for (int x = 0; x < Width; x++)
+        {
+            for (int y = 0; y < Height; y++)
+            {
+                Tile tile = board[x, y];
+                if (tile.ColorID == -1)
+                {
+                    tile.SetColorID(Random.Range(0, 4)); // Rastgele yeni renk ata
+                }
+            }
+        }
     }
 }

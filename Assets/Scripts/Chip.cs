@@ -2,19 +2,32 @@ using UnityEngine;
 
 public class Chip : MonoBehaviour
 {
-    public Sprite[] sprites; // Çip görselleri
+    private SpriteRenderer spriteRenderer;
+    private Color originalColor;
 
-    private int colorID; // Çipin renk ID'si
-
-    public void Initialize(int colorID)
+    private void Awake()
     {
-        this.colorID = colorID; // Renk ID'sini sakla
-        GetComponent<SpriteRenderer>().sprite = sprites[colorID]; // Sprite'i güncelle
+        spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
-    public void isSelected(bool isSelected)
+    public void SetChipColor(int colorID)
     {
-        GetComponent<SpriteRenderer>().color =  isSelected ? Color.black  : Color.white;
+        // ColorID'ye göre sprite'ı ayarla
+        spriteRenderer.sprite = GameManager.Instance.GetChipSprite(colorID);
+
+        // Orijinal rengi sakla
+        originalColor = spriteRenderer.color;
     }
-    public int GetColorID() => colorID; // Çipin renk ID'sini döndür
+
+    // Geçici bir renk uygula
+    public void SetTemporaryColor(Color color)
+    {
+        spriteRenderer.color = color;
+    }
+
+    // Rengi eski haline döndür
+    public void ResetColor()
+    {
+        spriteRenderer.color = originalColor;
+    }
 }

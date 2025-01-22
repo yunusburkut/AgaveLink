@@ -33,7 +33,7 @@ public class BoardManager : MonoBehaviour
         }
 
         // Komşuları hesapla
-        CalculateNeighbors();
+        CalculateNeighbors();//cache
     }
 
     private void CalculateNeighbors()

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class Tile : MonoBehaviour
 {
-    public int ColorID { get; private set; } = -1; // -1 boş bir Tile'ı temsil eder
+    public int ColorID { get; private set; } = -1; // -1 boş bir Tile'ı temsil eder ve çeşitlendirilip özel chipler için kullanılabilir
     public Vector2Int Position { get; private set; } // Tahtadaki pozisyon
     public Chip CurrentChip { get; private set; } // Bu Tile üzerindeki Chip
     public List<Tile> Neighbors { get; private set; } = new List<Tile>(); // Komşu Tile'lar

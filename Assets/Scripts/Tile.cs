@@ -14,6 +14,14 @@ public class Tile : MonoBehaviour
         SetColorID(colorID);
     }
 
+    public void setChip(Chip chip)
+    {
+        CurrentChip = chip;
+    }
+    public void SetColorIDz(int colorID)
+    {
+        ColorID = colorID;
+    }
     public void SetColorID(int colorID)
     {
         ColorID = colorID;

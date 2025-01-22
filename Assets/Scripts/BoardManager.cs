@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -86,13 +87,87 @@ public class BoardManager : MonoBehaviour
         {
             tile.SetColorID(-1); // Tile'ı boşalt
         }
-       // FillEmptyTiles(); // Boşlukları doldur
+        DropTiles();
+        //FillEmptyTiles(); // Boşlukları doldur
     }
     public Vector2Int GetGridPositionFromWorld(Vector3 worldPosition)
     {
         int x = Mathf.FloorToInt(worldPosition.x);
         int y = Mathf.FloorToInt(worldPosition.y);
         return new Vector2Int(x, y);
+    }
+
+    private void DropTiles()
+    {
+        // Her sütun için kontrol yap
+        for (int x = 0; x < Width; x++)
+        {
+            // En alttan üste doğru ilerleyin
+            for (int y = 0; y < Height; y++)
+            {
+                // Şu anda kontrol edilen tile
+                Tile currentTile = board[x, y];
+
+                // Eğer currentTile boşsa (ColorID == -1)
+                if (currentTile.ColorID == -1)
+                {
+                    // Üzerindeki tile'ları kontrol et
+                    for (int k = y + 1; k < Height; k++)
+                    {
+                        Tile aboveTile = board[x, k];
+
+                        if (aboveTile.ColorID != -1) // Üstte dolu bir tile bulduk
+                        {
+                            // Çipleri hareket ettir (animasyonlu olarak)
+                            StartCoroutine(MoveChipDown(aboveTile, currentTile));
+
+                            // Aşağıdaki tile'ın ColorID'sini güncelle
+                            currentTile.SetColorIDz(aboveTile.ColorID);
+
+                            // Üstteki tile'ın ColorID'sini boşalt
+                            aboveTile.SetColorIDz(-1);
+
+                            break; // Bir kez bir tile'ı kaydırdıktan sonra döngüden çık
+                        }
+                    }
+                }
+            }
+        }
+    }
+    private IEnumerator MoveChipDown(Tile fromTile, Tile toTile)
+    {
+        // Eğer üstte bir çip yoksa işlem yapma
+        if (fromTile.CurrentChip == null)
+        {
+            yield break;
+        }
+
+        // Hareket eden çipi al
+        Chip movingChip = fromTile.CurrentChip;
+
+        // Başlangıç ve hedef pozisyonları belirle
+        Vector3 startPosition = movingChip.transform.position;
+        Vector3 endPosition = toTile.transform.position;
+
+        float elapsedTime = 0f;
+        float duration = 0.5f; // Hareket süresi
+
+        while (elapsedTime < duration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / duration;
+
+            // Çipin pozisyonunu Lerp ile hareket ettir
+            movingChip.transform.position = Vector3.Lerp(startPosition, endPosition, t);
+            yield return null; // Bir sonraki frame'e kadar bekle
+        }
+
+        // Hareket tamamlandığında çipi yeni pozisyona yerleştir
+        movingChip.transform.position = endPosition;
+
+        // Yeni tile ile çip ilişkilendirmesi yapılabilir
+        toTile.setChip(movingChip);
+        fromTile.setChip(null) ;
     }
 
     private void FillEmptyTiles()

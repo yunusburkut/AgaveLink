@@ -228,6 +228,10 @@ public class BoardManager : MonoBehaviour
     
         // Toplam geçerli grup sayısını logla
         Debug.Log($"Board'da toplam {linkedGroups.Count} geçerli linklenebilir grup bulundu.");
+        if (linkedGroups.Count == 0)
+        {
+            
+        }
     }
 
 // Belirtilen tile'dan başlayarak bağlantılı grubu bulur

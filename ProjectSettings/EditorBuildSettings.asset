@@ -11,4 +11,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/WinEndGameScene.unity
     guid: 5e1eaac25d5bec54185b1fd244127425
+  - enabled: 1
+    path: Assets/Scenes/LoseEndGameScene.unity
+    guid: ce5a47db321007d4c9950dfd92c01857
   m_configObjects: {}

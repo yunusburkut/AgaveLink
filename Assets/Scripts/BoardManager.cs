@@ -24,7 +24,14 @@ public class BoardManager : MonoBehaviour
     private void InitializeBoard()
     {
         board = new Tile[Width, poolingHeight];
-
+        float cameraWidht = Width;
+        float cameraHeight = Height;
+        cameraWidht /= 2;
+        cameraHeight /= 2;
+        Vector3 newPosition = new Vector3(cameraWidht, cameraHeight, -10);
+        // Ana kameranın pozisyonunu row sayısına göre değiştiriyoruz uzaklıgınıda ona göre ayarlıyoruz
+        Camera.main.transform.position = newPosition;
+        Camera.main.orthographicSize = cameraHeight;
         for (int x = 0; x < Width; x++)
         {
             for (int y = 0; y < poolingHeight; y++)

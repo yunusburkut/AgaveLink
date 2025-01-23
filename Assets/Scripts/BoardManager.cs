@@ -6,7 +6,7 @@ public class BoardManager : MonoBehaviour
 {
     public int Width;
     public int Height;
-    public int PoolHeight;
+    private int poolingHeight; /// dinamik yap
     public GameObject tilePrefab;
     public Transform boardParent;
 
@@ -14,17 +14,18 @@ public class BoardManager : MonoBehaviour
 
     private void Start()
     {
+        poolingHeight = Height * 2;
         InitializeBoard();
         LogLinkedChipGroups();
     }
 
     private void InitializeBoard()
     {
-        board = new Tile[Width, Height];
+        board = new Tile[Width, poolingHeight];
 
         for (int x = 0; x < Width; x++)
         {
-            for (int y = 0; y < Height; y++)
+            for (int y = 0; y < poolingHeight; y++)
             {
                 
                 GameObject tileObject = Instantiate(tilePrefab, boardParent);
@@ -45,12 +46,12 @@ public class BoardManager : MonoBehaviour
     {
         for (int x = 0; x < Width; x++)
         {
-            for (int y = 0; y < Height; y++)
+            for (int y = 0; y < poolingHeight; y++)
             {
                 Tile tile = board[x, y];
 
                 // Komşuların yönlerini kontrol etmek için
-                if (y < 7) // 8. satır (y == 7) değilse yukarı komşuya bakılabilir
+                if (y < (poolingHeight/2)-1) // board'un en üst satırının bi altını alıyo böylelikle komşu hesaplamasına yukarıda spawnnladııgımız chipler hesabaa girmiyor
                 {
                     Vector2Int neighborPos = tile.Position + Vector2Int.up;
                     if (IsInsideBoard(neighborPos))
@@ -84,7 +85,7 @@ public class BoardManager : MonoBehaviour
 
     public bool IsInsideBoard(Vector2Int position)
     {
-        return position.x >= 0 && position.x < Width && position.y >= 0 && position.y < Height;
+        return position.x >= 0 && position.x < Width && position.y >= 0 && position.y < poolingHeight;
     }
 
     public Tile GetTileAtPosition(Vector2Int position)
@@ -114,7 +115,7 @@ public class BoardManager : MonoBehaviour
         for (int x = 0; x < Width; x++)
         {
             // En alttan üste doğru ilerleyin
-            for (int y = 0; y < Height; y++)
+            for (int y = 0; y < poolingHeight; y++)
             {
                 // Şu anda kontrol edilen tile
                 Tile currentTile = board[x, y];
@@ -123,7 +124,7 @@ public class BoardManager : MonoBehaviour
                 if (currentTile.ColorID == -1)
                 {
                     // Üzerindeki tile'ları kontrol et
-                    for (int k = y ; k < Height; k++)
+                    for (int k = y ; k < poolingHeight; k++)
                     {
                         Tile aboveTile = board[x, k];
 
@@ -188,7 +189,7 @@ public class BoardManager : MonoBehaviour
     {
         for (int x = 0; x < Width; x++)
         {
-            for (int y = 0; y < Height; y++)
+            for (int y = 0; y < poolingHeight; y++)
             {
                 Tile tile = board[x, y];
                 if (tile.ColorID == -1)
@@ -204,9 +205,9 @@ public class BoardManager : MonoBehaviour
         List<List<Tile>> linkedGroups = new List<List<Tile>>(); // Bulunan bağlantılı gruplar
     
         // Tüm board'u gez
-        for (int x = 0; x < 8; x++)
+        for (int x = 0; x < Width; x++)
         {
-            for (int y = 0; y < 8; y++)
+            for (int y = 0; y < poolingHeight/2; y++)
             {
                 Tile startTile = board[x, y];
     

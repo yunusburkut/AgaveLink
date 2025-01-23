@@ -62,4 +62,9 @@ public class Tile : MonoBehaviour
             Neighbors.Add(neighbor);
         }
     }
+    public void ClearNeighbors()
+    {
+        Neighbors.Clear();
+    }
+
 }

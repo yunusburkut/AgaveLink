@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class BoardManager : MonoBehaviour
 {
@@ -96,6 +97,8 @@ public class BoardManager : MonoBehaviour
     
     public void DestroyTiles(List<Tile> tilesToDestroy)
     {
+        GameManager.Instance.AddScore(tilesToDestroy.Count);
+        
         FillEmptyTiles();
         foreach (Tile tile in tilesToDestroy)
         {
@@ -201,7 +204,6 @@ public class BoardManager : MonoBehaviour
         }
     
         // Toplam geçerli grup sayısını logla
-        Debug.Log($"Board'da toplam {linkedGroups.Count} geçerli linklenebilir grup bulundu.");
         if (linkedGroups.Count == 0)
         {
             
@@ -239,6 +241,40 @@ public class BoardManager : MonoBehaviour
              } 
          }
          return linkedGroup; // Bağlantılı grubu döndür
+    }
+
+    public void ResetGame()
+    {
+        Debug.Log("Game is resetting...");
+
+        // 1. Tüm çipleri sıfırla ve pool'a geri gönder
+        for (int x = 0; x < Width; x++)
+        {
+            for (int y = 0; y < poolingHeight; y++)
+            {
+                Tile tile = board[x, y];
+
+                if (tile.CurrentChip != null)
+                {
+                    // Çipi pool'a geri gönder
+                    ObjectPooler.Instance.ReleaseChip(tile.CurrentChip);
+                    tile.setChip(null); // Tile ile çip ilişiğini kes
+                }
+
+                // Tile'ı sıfırla
+                tile.SetColorID(-1); // Boş renk (örneğin -1, boş bir state için kullanılabilir)
+            }
+        }
+
+        // 2. Board'da yapılan tüm hesaplamaları sıfırla (örneğin, bağlantılar)
+        foreach (Tile tile in board)
+        {
+            tile.ClearNeighbors(); // Komşular listesini temizle
+        }
+
+        // 3. Yeni bir board başlat
+        
+        SceneManager.LoadScene("EndGameScene");
     }
 
 }

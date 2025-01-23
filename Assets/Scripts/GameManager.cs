@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
@@ -10,6 +12,10 @@ public class GameManager : MonoBehaviour
 
     public Sprite[] chipSprites;
 
+    // UI için referanslar
+    public Text scoreText;   // Unity Editor'den atanacak
+    public Text movesText;   // Unity Editor'den atanacak
+
     private void Awake()
     {
         if (Instance == null)
@@ -20,6 +26,9 @@ public class GameManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
+        // İlk UI güncellemesi
+        UpdateUI();
     }
 
     public Sprite GetChipSprite(int colorID)
@@ -37,6 +46,11 @@ public class GameManager : MonoBehaviour
         currentScore += points;
         Debug.Log("Score: " + currentScore);
 
+        // UI güncelle
+        UpdateUI();
+
+        DecrementMoves();
+
         if (currentScore >= scoreGoal)
         {
             Debug.Log("You Win!");
@@ -48,16 +62,35 @@ public class GameManager : MonoBehaviour
         remainingMoves--;
         Debug.Log("Moves Left: " + remainingMoves);
 
+        // UI güncelle
+        UpdateUI();
+
         if (remainingMoves <= 0)
         {
             if (currentScore >= scoreGoal)
             {
-                Debug.Log("You Win!");
+                SceneManager.LoadScene("WinEndGameScene");
+                FindObjectOfType<BoardManager>().ResetGame();
             }
             else
             {
-                Debug.Log("Game Over!");
+                SceneManager.LoadScene("LoseEndGameScene");
+                FindObjectOfType<BoardManager>().ResetGame();
             }
+        }
+    }
+
+    private void UpdateUI()
+    {
+        // UI Text bileşenlerini güncelle
+        if (scoreText != null)
+        {
+            scoreText.text = $"Score: {currentScore} / {scoreGoal}";
+        }
+
+        if (movesText != null)
+        {
+            movesText.text = $"Moves Left: {remainingMoves}";
         }
     }
 }

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 
 public class BoardManager : MonoBehaviour
@@ -111,35 +112,26 @@ public class BoardManager : MonoBehaviour
 
     private void DropTiles()
     {
-        // Her sütun için kontrol yap
         for (int x = 0; x < Width; x++)
         {
-            // En alttan üste doğru ilerleyin
             for (int y = 0; y < poolingHeight; y++)
             {
-                // Şu anda kontrol edilen tile
                 Tile currentTile = board[x, y];
 
-                // Eğer currentTile boşsa (ColorID == -1)
                 if (currentTile.ColorID == -1)
                 {
-                    // Üzerindeki tile'ları kontrol et
-                    for (int k = y ; k < poolingHeight; k++)
+                    for (int k = y; k < poolingHeight; k++)
                     {
                         Tile aboveTile = board[x, k];
 
-                        if (aboveTile.ColorID != -1) // Üstte dolu bir tile bulduk
+                        if (aboveTile.ColorID != -1)
                         {
-                            // Çipleri hareket ettir (animasyonlu olarak)
-                            StartCoroutine(MoveChipDown(aboveTile, currentTile));
+                            MoveChipDownDOTween(aboveTile, currentTile);
 
-                            // Aşağıdaki tile'ın ColorID'sini güncelle
                             currentTile.SetColorIDLoc(aboveTile.ColorID);
-
-                            // Üstteki tile'ın ColorID'sini boşalt
                             aboveTile.SetColorIDLoc(-1);
 
-                            break; // Bir kez bir tile'ı kaydırdıktan sonra döngüden çık
+                            break;
                         }
                     }
                 }
@@ -147,43 +139,25 @@ public class BoardManager : MonoBehaviour
         }
         LogLinkedChipGroups();
     }
-    private IEnumerator MoveChipDown(Tile fromTile, Tile toTile)//tween ekle
+
+    private void MoveChipDownDOTween(Tile fromTile, Tile toTile)
     {
-        // Eğer üstte bir çip yoksa işlem yapma
         if (fromTile.CurrentChip == null)
         {
-            yield break;
+            return;
         }
 
-        // Hareket eden çipi al
         Chip movingChip = fromTile.CurrentChip;
 
-        // Başlangıç ve hedef pozisyonları belirle
-        Vector3 startPosition = movingChip.transform.position;
-        Vector3 endPosition = toTile.transform.position;
-
-        float elapsedTime = 0f;
-        float duration = 0.5f; // Hareket süresi
-
-        while (elapsedTime < duration)
+        // DOTween ile animasyon başlat
+        movingChip.transform.DOMove(toTile.transform.position, 0.4f).SetEase(Ease.InOutSine).OnComplete(() =>
         {
-            elapsedTime += Time.deltaTime;
-            float t = elapsedTime / duration;
-
-            // Çipin pozisyonunu Lerp ile hareket ettir
-            movingChip.transform.position = Vector3.Lerp(startPosition, endPosition, t);
-            yield return null; // Bir sonraki frame'e kadar bekle
-        }
-
-        // Hareket tamamlandığında çipi yeni pozisyona yerleştir
-        movingChip.transform.position = endPosition;
-
-        
-        // Yeni tile ile çip ilişkilendirmesi yapılabilir
-        toTile.setChip(movingChip);
-        fromTile.setChip(null) ;
-        
+            // Animasyon tamamlandığında çipi yeni tile ile ilişkilendir
+            toTile.setChip(movingChip);
+            fromTile.setChip(null);
+        });
     }
+
 
     private void FillEmptyTiles()
     {

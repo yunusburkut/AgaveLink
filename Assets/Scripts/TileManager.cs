@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 
 public class TileManager
@@ -90,15 +91,18 @@ public class TileManager
             // Hareket yönünü hesapla
             Vector3 direction = (neighbor.transform.position - lastLinkedTile.transform.position).normalized;
 
-            // Eğer yön doğru hesaplanmamışsa (örneğin, Vector3.zero ise), işlem yapma
+            // Eğer yön doğru hesaplanmamışsa, işlem yapma
             if (direction == Vector3.zero)
             {
                 Debug.LogWarning("Direction is zero for neighbor, skipping push.");
                 continue;
             }
 
-            // Çipi hareket ettir
-            neighbor.CurrentChip.transform.localPosition += direction * pushDistance;
+            // Hedef pozisyonu hesapla
+            Vector3 targetPosition = neighbor.CurrentChip.transform.localPosition + direction * pushDistance;
+
+            // Çipi hedef pozisyona animasyonla hareket ettir
+            neighbor.CurrentChip.AnimateToPosition(targetPosition, 0.05f);
         }
     }
 
@@ -112,10 +116,16 @@ public class TileManager
 
             if (neighbor.CurrentChip != null)
             {
-                neighbor.CurrentChip.transform.localPosition = originalPosition; // Orijinal pozisyona dön
+                // Çipi orijinal pozisyonuna hareket ettir
+                neighbor.CurrentChip.AnimateToPosition(originalPosition, 0.05f);
             }
         }
 
-        originalPositions.Clear(); // Pozisyon verilerini temizle
+        // Orijinal pozisyonları temizle
+        originalPositions.Clear();
     }
+
+
+
+
 }

@@ -709,7 +709,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentScore: 0
   scoreGoal: 100
-  remainingMoves: 20
+  remainingMoves: 2
   chipSprites:
   - {fileID: 21300000, guid: c0749f0731debb4499f067d4bbd8527a, type: 3}
   - {fileID: 21300000, guid: 9a53a0f607899d24a98682e83e529c1b, type: 3}

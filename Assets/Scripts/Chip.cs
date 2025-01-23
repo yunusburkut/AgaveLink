@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 using DG.Tweening; // DoTween kütüphanesini ekle
@@ -25,6 +26,11 @@ public class Chip : MonoBehaviour
 
         // Orijinal rengi sakla
         originalColor = spriteRenderer.color;
+    }
+
+    public void OnDestroy()
+    {
+        DOTween.KillAll();
     }
 
     // Geçici bir renk uygula

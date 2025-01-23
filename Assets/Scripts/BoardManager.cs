@@ -281,7 +281,6 @@ public class BoardManager : MonoBehaviour
 
         // 3. Yeni bir board başlat
         
-        SceneManager.LoadScene("EndGameScene");
     }
 
 }

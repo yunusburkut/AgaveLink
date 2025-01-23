@@ -1,3 +1,4 @@
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -53,7 +54,9 @@ public class GameManager : MonoBehaviour
 
         if (currentScore >= scoreGoal)
         {
-            Debug.Log("You Win!");
+           
+            SceneManager.LoadScene("WinEndGameScene");
+            FindObjectOfType<BoardManager>().ResetGame();
         }
     }
 
@@ -69,11 +72,13 @@ public class GameManager : MonoBehaviour
         {
             if (currentScore >= scoreGoal)
             {
+               
                 SceneManager.LoadScene("WinEndGameScene");
                 FindObjectOfType<BoardManager>().ResetGame();
             }
             else
             {
+               
                 SceneManager.LoadScene("LoseEndGameScene");
                 FindObjectOfType<BoardManager>().ResetGame();
             }

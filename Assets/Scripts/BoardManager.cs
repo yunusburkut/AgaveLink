@@ -5,7 +5,7 @@ using UnityEngine;
 public class BoardManager : MonoBehaviour
 {
     public int Width = 8;
-    public int Height = 8;
+    public int Height = 16; /// dinamik yap
     public GameObject tilePrefab;
     public Transform boardParent;
 
@@ -24,6 +24,7 @@ public class BoardManager : MonoBehaviour
         {
             for (int y = 0; y < Height; y++)
             {
+                
                 GameObject tileObject = Instantiate(tilePrefab, boardParent);
                 tileObject.transform.position = new Vector2(x, y);
 
@@ -34,9 +35,13 @@ public class BoardManager : MonoBehaviour
         }
 
         // Komşuları hesapla
-        CalculateNeighbors();//cache
+        CalculateNeighbors();//cache 
     }
 
+    void DeadlockCalculator()
+    {
+        
+    }
     private void CalculateNeighbors()
     {
         Vector2Int[] directions = new Vector2Int[]
@@ -83,12 +88,12 @@ public class BoardManager : MonoBehaviour
 
     public void DestroyTiles(List<Tile> tilesToDestroy)
     {
+        FillEmptyTiles();
         foreach (Tile tile in tilesToDestroy)
         {
             tile.SetColorID(-1); // Tile'ı boşalt
         }
         DropTiles();
-        //FillEmptyTiles(); // Boşlukları doldur
     }
     public Vector2Int GetGridPositionFromWorld(Vector3 worldPosition)
     {
@@ -112,7 +117,7 @@ public class BoardManager : MonoBehaviour
                 if (currentTile.ColorID == -1)
                 {
                     // Üzerindeki tile'ları kontrol et
-                    for (int k = y + 1; k < Height; k++)
+                    for (int k = y ; k < Height; k++)
                     {
                         Tile aboveTile = board[x, k];
 
@@ -122,10 +127,10 @@ public class BoardManager : MonoBehaviour
                             StartCoroutine(MoveChipDown(aboveTile, currentTile));
 
                             // Aşağıdaki tile'ın ColorID'sini güncelle
-                            currentTile.SetColorIDz(aboveTile.ColorID);
+                            currentTile.SetColorIDLoc(aboveTile.ColorID);
 
                             // Üstteki tile'ın ColorID'sini boşalt
-                            aboveTile.SetColorIDz(-1);
+                            aboveTile.SetColorIDLoc(-1);
 
                             break; // Bir kez bir tile'ı kaydırdıktan sonra döngüden çık
                         }
@@ -133,8 +138,9 @@ public class BoardManager : MonoBehaviour
                 }
             }
         }
+        
     }
-    private IEnumerator MoveChipDown(Tile fromTile, Tile toTile)
+    private IEnumerator MoveChipDown(Tile fromTile, Tile toTile)//tween ekle
     {
         // Eğer üstte bir çip yoksa işlem yapma
         if (fromTile.CurrentChip == null)
@@ -165,9 +171,11 @@ public class BoardManager : MonoBehaviour
         // Hareket tamamlandığında çipi yeni pozisyona yerleştir
         movingChip.transform.position = endPosition;
 
+        
         // Yeni tile ile çip ilişkilendirmesi yapılabilir
         toTile.setChip(movingChip);
         fromTile.setChip(null) ;
+        
     }
 
     private void FillEmptyTiles()

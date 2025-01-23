@@ -6,7 +6,7 @@ public class Tile : MonoBehaviour
     public int ColorID { get; private set; } = -1; // -1 boş bir Tile'ı temsil eder ve çeşitlendirilip özel chipler için kullanılabilir
     public Vector2Int Position { get; private set; } // Tahtadaki pozisyon
     public Chip CurrentChip { get; private set; } // Bu Tile üzerindeki Chip
-    public List<Tile> Neighbors { get; private set; } = new List<Tile>(); // Komşu Tile'lar
+    public List<Tile> Neighbors; // Komşu Tile'lar
 
     public void Initialize(Vector2Int position, int colorID)
     {
@@ -18,12 +18,13 @@ public class Tile : MonoBehaviour
     {
         CurrentChip = chip;
     }
-    public void SetColorIDz(int colorID)
+    public void SetColorIDLoc(int colorID)
     {
         ColorID = colorID;
     }
     public void SetColorID(int colorID)
     {
+        ResetChipColor();
         ColorID = colorID;
         if (colorID == -1 && CurrentChip != null)
         {

@@ -47,10 +47,6 @@ public class Tile : MonoBehaviour
             CurrentChip.SetTemporaryColor(color);
         }
     }
-    public void SetTemporaryColor(Color color)
-    {
-        GetComponent<SpriteRenderer>().color = color;
-    }
     public void ResetChipColor()
     {
         if (CurrentChip != null)
@@ -58,7 +54,6 @@ public class Tile : MonoBehaviour
             CurrentChip.ResetColor();
         }
     }
-
     // Komşu Tile'ları listeye ekle
     public void AddNeighbor(Tile neighbor)
     {

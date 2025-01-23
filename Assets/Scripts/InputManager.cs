@@ -116,7 +116,7 @@ public class InputManager : MonoBehaviour
         return null;
     }
 
-    private void AddTileToLink(Tile tile)
+    private void AddTileToLink(Tile tile) 
     {
         linkedTiles.Add(tile);
         tile.SetChipTemporaryColor(selectedColor);

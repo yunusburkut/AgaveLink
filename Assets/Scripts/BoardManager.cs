@@ -4,8 +4,9 @@ using UnityEngine;
 
 public class BoardManager : MonoBehaviour
 {
-    public int Width = 8;
-    public int Height = 16; /// dinamik yap
+    public int Width;
+    public int Height;
+    public int PoolHeight;
     public GameObject tilePrefab;
     public Transform boardParent;
 
@@ -14,6 +15,7 @@ public class BoardManager : MonoBehaviour
     private void Start()
     {
         InitializeBoard();
+        LogLinkedChipGroups();
     }
 
     private void InitializeBoard()
@@ -38,27 +40,35 @@ public class BoardManager : MonoBehaviour
         CalculateNeighbors();//cache 
     }
 
-    void DeadlockCalculator()
-    {
-        
-    }
+   
     private void CalculateNeighbors()
     {
-        Vector2Int[] directions = new Vector2Int[]
-        {
-            Vector2Int.up,    // Yukarı
-            Vector2Int.down,  // Aşağı
-            Vector2Int.left,  // Sol
-            Vector2Int.right  // Sağ
-        };
-
         for (int x = 0; x < Width; x++)
         {
             for (int y = 0; y < Height; y++)
             {
                 Tile tile = board[x, y];
 
-                foreach (Vector2Int dir in directions)
+                // Komşuların yönlerini kontrol etmek için
+                if (y < 7) // 8. satır (y == 7) değilse yukarı komşuya bakılabilir
+                {
+                    Vector2Int neighborPos = tile.Position + Vector2Int.up;
+                    if (IsInsideBoard(neighborPos))
+                    {
+                        Tile neighbor = GetTileAtPosition(neighborPos);
+                        tile.AddNeighbor(neighbor);
+                    }
+                }
+
+                // Diğer yönler (Aşağı, Sol, Sağ)
+                Vector2Int[] otherDirections = new Vector2Int[] 
+                {
+                    Vector2Int.down, // Aşağı
+                    Vector2Int.left, // Sol
+                    Vector2Int.right // Sağ
+                };
+
+                foreach (Vector2Int dir in otherDirections)
                 {
                     Vector2Int neighborPos = tile.Position + dir;
                     if (IsInsideBoard(neighborPos))
@@ -71,6 +81,7 @@ public class BoardManager : MonoBehaviour
         }
     }
 
+
     public bool IsInsideBoard(Vector2Int position)
     {
         return position.x >= 0 && position.x < Width && position.y >= 0 && position.y < Height;
@@ -80,12 +91,7 @@ public class BoardManager : MonoBehaviour
     {
         return board[position.x, position.y];
     }
-
-    public bool AreNeighbors(Tile a, Tile b)
-    {
-        return a.Neighbors.Contains(b); // Komşular listesine göre kontrol
-    }
-
+    
     public void DestroyTiles(List<Tile> tilesToDestroy)
     {
         FillEmptyTiles();
@@ -138,7 +144,7 @@ public class BoardManager : MonoBehaviour
                 }
             }
         }
-        
+        LogLinkedChipGroups();
     }
     private IEnumerator MoveChipDown(Tile fromTile, Tile toTile)//tween ekle
     {
@@ -192,4 +198,68 @@ public class BoardManager : MonoBehaviour
             }
         }
     }
+    public void LogLinkedChipGroups()
+    {
+        HashSet<Tile> visitedTiles = new HashSet<Tile>(); // Ziyaret edilen tile'ları takip eder ve time complexitysi O(1) oldugu için hash set kullanmayı tercih ettim 
+        List<List<Tile>> linkedGroups = new List<List<Tile>>(); // Bulunan bağlantılı gruplar
+    
+        // Tüm board'u gez
+        for (int x = 0; x < 8; x++)
+        {
+            for (int y = 0; y < 8; y++)
+            {
+                Tile startTile = board[x, y];
+    
+                // Eğer bu tile zaten ziyaret edildiyse atla
+                if (visitedTiles.Contains(startTile))
+                    continue;
+    
+                // Bu tile'dan başlayarak bağlantılı grubu bul
+                List<Tile> linkedGroup = GetLinkedGroup(startTile, visitedTiles);
+    
+                // Eğer grup en az 3 tile içeriyorsa geçerli olarak kabul et
+                if (linkedGroup.Count >= 3)
+                {
+                    linkedGroups.Add(linkedGroup);
+                }
+            }
+        }
+    
+        // Toplam geçerli grup sayısını logla
+        Debug.Log($"Board'da toplam {linkedGroups.Count} geçerli linklenebilir grup bulundu.");
+    }
+
+// Belirtilen tile'dan başlayarak bağlantılı grubu bulur
+    private List<Tile> GetLinkedGroup(Tile startTile, HashSet<Tile> visitedTiles)
+    {
+        List<Tile> linkedGroup = new List<Tile>();
+                Queue<Tile> tilesToCheck = new Queue<Tile>();
+        
+         // Eğer başlangıç tile'ının rengi geçerli değilse (boşsa), grubu boş döndür
+         if (startTile.ColorID == -1)
+             return linkedGroup;
+        
+         // Başlangıç tile'ını işleme ekle
+         tilesToCheck.Enqueue(startTile);
+         visitedTiles.Add(startTile);
+        
+         while (tilesToCheck.Count > 0)
+         {
+             Tile currentTile = tilesToCheck.Dequeue();
+             linkedGroup.Add(currentTile);
+        
+             // Komşularını kontrol et
+             foreach (Tile neighbor in currentTile.Neighbors)
+             {
+                 // Eğer bu komşu aynı renge sahipse ve daha önce ziyaret edilmediyse
+                 if (neighbor.ColorID == startTile.ColorID && !visitedTiles.Contains(neighbor))
+                 {
+                     tilesToCheck.Enqueue(neighbor);
+                     visitedTiles.Add(neighbor);
+                 }
+             } 
+         }
+         return linkedGroup; // Bağlantılı grubu döndür
+    }
+
 }

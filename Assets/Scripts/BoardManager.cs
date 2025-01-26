@@ -18,7 +18,6 @@ public class BoardManager : MonoBehaviour
     {
         poolingHeight = Height * 2;
         InitializeBoard();
-        LogLinkedChipGroups();
     }
 
     private void InitializeBoard()
@@ -55,7 +54,7 @@ public class BoardManager : MonoBehaviour
     {
         for (int x = 0; x < Width; x++)
         {
-            for (int y = 0; y < poolingHeight; y++)
+            for (int y = 0; y < Height; y++)
             {
                 Tile tile = board[x, y];
 
@@ -147,7 +146,6 @@ public class BoardManager : MonoBehaviour
                 }
             }
         }
-        LogLinkedChipGroups();
     }
 
     private void MoveChipDownDOTween(Tile fromTile, Tile toTile)
@@ -165,6 +163,7 @@ public class BoardManager : MonoBehaviour
             // Animasyon tamamlandığında çipi yeni tile ile ilişkilendir
             toTile.setChip(movingChip);
             fromTile.setChip(null);
+            ShuffleTiles();
         });
     }
 
@@ -183,72 +182,7 @@ public class BoardManager : MonoBehaviour
             }
         }
     }
-    public void LogLinkedChipGroups()
-    {
-        HashSet<Tile> visitedTiles = new HashSet<Tile>(); // Ziyaret edilen tile'ları takip eder ve time complexitysi O(1) oldugu için hash set kullanmayı tercih ettim 
-        List<List<Tile>> linkedGroups = new List<List<Tile>>(); // Bulunan bağlantılı gruplar
-    
-        // Tüm board'u gez
-        for (int x = 0; x < Width; x++)
-        {
-            for (int y = 0; y < poolingHeight/2; y++)
-            {
-                Tile startTile = board[x, y];
-    
-                // Eğer bu tile zaten ziyaret edildiyse atla
-                if (visitedTiles.Contains(startTile))
-                    continue;
-    
-                // Bu tile'dan başlayarak bağlantılı grubu bul
-                List<Tile> linkedGroup = GetLinkedGroup(startTile, visitedTiles);
-    
-                // Eğer grup en az 3 tile içeriyorsa geçerli olarak kabul et
-                if (linkedGroup.Count >= 3)
-                {
-                    linkedGroups.Add(linkedGroup);
-                }
-            }
-        }
-    
-        // Toplam geçerli grup sayısını logla
-        if (linkedGroups.Count == 0)
-        {
-            
-        }
-    }
-
-// Belirtilen tile'dan başlayarak bağlantılı grubu bulur
-    private List<Tile> GetLinkedGroup(Tile startTile, HashSet<Tile> visitedTiles)
-    {
-        List<Tile> linkedGroup = new List<Tile>();
-                Queue<Tile> tilesToCheck = new Queue<Tile>();
-        
-         // Eğer başlangıç tile'ının rengi geçerli değilse (boşsa), grubu boş döndür
-         if (startTile.ColorID == -1)
-             return linkedGroup;
-        
-         // Başlangıç tile'ını işleme ekle
-         tilesToCheck.Enqueue(startTile);
-         visitedTiles.Add(startTile);
-        
-         while (tilesToCheck.Count > 0)
-         {
-             Tile currentTile = tilesToCheck.Dequeue();
-             linkedGroup.Add(currentTile);
-        
-             // Komşularını kontrol et
-             foreach (Tile neighbor in currentTile.Neighbors)
-             {
-                 // Eğer bu komşu aynı renge sahipse ve daha önce ziyaret edilmediyse
-                 if (neighbor.ColorID == startTile.ColorID && !visitedTiles.Contains(neighbor))
-                 {
-                     tilesToCheck.Enqueue(neighbor);
-                     visitedTiles.Add(neighbor);
-                 }
-             } 
-         }
-         return linkedGroup; // Bağlantılı grubu döndür
-    }
+ 
 
     public void ResetGame()
     {
@@ -282,5 +216,124 @@ public class BoardManager : MonoBehaviour
         // 3. Yeni bir board başlat
         
     }
-
-}
+    public void ShuffleTiles()
+    {
+        Debug.Log("Shuffling tiles...");
+    
+        // 1. Görünür board'daki tüm tile'ları topla
+        List<Tile> visibleTiles = new List<Tile>();
+        List<int> colorIDs = new List<int>();
+    
+        for (int x = 0; x < Width; x++)
+        {
+            for (int y = 0; y < Height; y++) // Yalnızca görünür kısmı dolaş
+            {
+                Tile tile = board[x, y];
+                if (tile.CurrentChip != null) // Eğer tile'da çip varsa
+                {
+                    visibleTiles.Add(tile); // Tile'ı ekle
+                    colorIDs.Add(tile.ColorID); // Mevcut ColorID'yi listeye ekle
+                }
+            }
+        }
+    
+        // 2. Potansiyel bir grup bulunana kadar karıştırmayı dene
+        bool hasPotentialGroups = false;
+    
+        // Maksimum deneme sayısı
+        int maxAttempts = 50; // Sonsuz döngüyü önlemek için bir sınır koyuyoruz
+        int attempts = 0;
+    
+        while (!hasPotentialGroups && attempts < maxAttempts)
+        {
+            // ColorID'leri karıştır
+            ShuffleList(colorIDs);
+    
+            // Simüle edilmiş ColorID'leri tile'lara at
+            for (int i = 0; i < visibleTiles.Count; i++)
+            {
+                visibleTiles[i].SetColorIDLoc(colorIDs[i]);
+            }
+    
+            // Potansiyel linklenebilir grup olup olmadığını kontrol et
+            hasPotentialGroups = HasPotentialLinkedGroups();
+            attempts++;
+        }
+    
+        // Eğer hiçbir linklenebilir grup bulunamazsa işlemi sonlandır
+        if (!hasPotentialGroups)
+        {
+            Debug.LogWarning("No potential groups found after shuffling. Shuffle skipped.");
+            return;
+        }
+    
+       
+    
+        Debug.Log("Tiles shuffled successfully!");
+    }
+    
+    // Rastgele bir listeyi karıştırır (Fisher-Yates Shuffle algoritması)
+    private void ShuffleList<T>(List<T> list)
+    {
+        for (int i = list.Count - 1; i > 0; i--)
+        {
+            int randomIndex = Random.Range(0, i + 1);
+            (list[i], list[randomIndex]) = (list[randomIndex], list[i]); // Swap işlemi
+        }
+    }
+    
+    // Board'da potansiyel bir linklenebilir grup olup olmadığını kontrol eder
+    private bool HasPotentialLinkedGroups()
+    {
+        HashSet<Tile> visitedTiles = new HashSet<Tile>(); // Ziyaret edilen tile'ları takip eder
+    
+        for (int x = 0; x < Width; x++)
+        {
+            for (int y = 0; y < Height; y++)
+            {
+                Tile startTile = board[x, y];
+    
+                // Eğer tile zaten ziyaret edildiyse veya boşsa kontrol etme
+                if (visitedTiles.Contains(startTile) || startTile.ColorID == -1)
+                    continue;
+    
+                // Bağlantılı grubu bul
+                List<Tile> linkedGroup = GetLinkedGroup(startTile, visitedTiles);
+    
+                // Eğer bağlantılı grup en az 3 tile içeriyorsa, potansiyel bir grup var
+                if (linkedGroup.Count >= 3)
+                {
+                    return true;
+                }
+            }
+        }
+    
+        return false; // Hiçbir linklenebilir grup yok
+    }
+    
+    // Tile'lar arasında bağlantılı bir grup bulur
+    private List<Tile> GetLinkedGroup(Tile startTile, HashSet<Tile> visitedTiles)
+    {
+        List<Tile> linkedGroup = new List<Tile>();
+        Queue<Tile> tilesToCheck = new Queue<Tile>();
+    
+        tilesToCheck.Enqueue(startTile);
+        visitedTiles.Add(startTile);
+    
+        while (tilesToCheck.Count > 0)
+        {
+            Tile currentTile = tilesToCheck.Dequeue();
+            linkedGroup.Add(currentTile);
+    
+            foreach (Tile neighbor in currentTile.Neighbors)
+            {
+                if (neighbor.ColorID == startTile.ColorID && !visitedTiles.Contains(neighbor))
+                {
+                    tilesToCheck.Enqueue(neighbor);
+                    visitedTiles.Add(neighbor);
+                }
+            }
+        }
+        return linkedGroup;
+    }
+}   

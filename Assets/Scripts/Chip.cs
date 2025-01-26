@@ -14,11 +14,7 @@ public class Chip : MonoBehaviour
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
     }
-
-    public void SetCurrentTween(Tween tween)
-    {
-        CurrentTween = tween;
-    }
+    
     public void SetChipColor(int colorID)
     {
         // ColorID'ye göre sprite'ı ayarla

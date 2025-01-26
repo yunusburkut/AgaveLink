@@ -105,8 +105,7 @@ public class TileManager
             neighbor.CurrentChip.AnimateToPosition(targetPosition, 0.05f);
         }
     }
-
-
+    
     public void ResetMovedNeighbors(Dictionary<Tile, Vector3> originalPositions)
     {
         foreach (var entry in originalPositions)
@@ -124,8 +123,4 @@ public class TileManager
         // Orijinal pozisyonları temizle
         originalPositions.Clear();
     }
-
-
-
-
 }

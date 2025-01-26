@@ -20,14 +20,7 @@ public class Tile : MonoBehaviour
     }
     public void SetColorIDLoc(int colorID)
     {
-        
         ColorID = colorID;
-        if (CurrentChip != null)
-        {
-            // Çipin rengini güncelle
-            CurrentChip.SetChipColor(colorID);
-            CurrentChip.transform.position = transform.position;
-        }
     }
     public void SetColorID(int colorID)
     {

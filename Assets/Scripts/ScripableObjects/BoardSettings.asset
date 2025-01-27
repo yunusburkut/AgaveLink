@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 811a79efa5cbad34d9931fdaf9eeb854, type: 3}
   m_Name: BoardSettings
   m_EditorClassIdentifier: 
-  Width: 8
-  Height: 8
-  ColorCount: 3
+  Width: 4
+  Height: 4
+  ColorCount: 4
   currentScore: 0
-  scoreGoal: 20
-  remainingMoves: 5
+  scoreGoal: 100
+  remainingMoves: 20

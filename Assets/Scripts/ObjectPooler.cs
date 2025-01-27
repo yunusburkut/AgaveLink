@@ -4,15 +4,17 @@ using System.Collections.Generic;
 public class ObjectPooler : MonoBehaviour
 {
     public static ObjectPooler Instance;
+    public BoardSettings boardSettings;
 
-    [SerializeField] private GameObject chipPrefab;
-    [SerializeField] private int initialPoolSize = 64;
+    [SerializeField] private GameObject chipPrefab; 
+    private int initialPoolSize;
 
     private Queue<Chip> chipPool = new Queue<Chip>();
 
     private void Awake()
     {
         Instance = this;
+        initialPoolSize = (boardSettings.Width * boardSettings.Height)*2;
         InitializePool();
     }
 

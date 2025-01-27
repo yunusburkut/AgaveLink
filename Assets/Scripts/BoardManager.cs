@@ -6,31 +6,42 @@ using UnityEngine.SceneManagement;
 
 public class BoardManager : MonoBehaviour
 {
-    public int Width;
-    public int Height;
+    public BoardSettings boardSettings;
+    private int Width;
+    private int Height;
+    private int ColorCount;
     private int poolingHeight; /// dinamik yap
     public GameObject tilePrefab;
     public Transform boardParent;
+    private CameraManager cameraManager;
+
 
     private Tile[,] board;
 
     private void Start()
     {
-        poolingHeight = Height * 2;
+        poolingHeight = boardSettings.Height * 2;
         InitializeBoard();
     }
 
     private void InitializeBoard()
     {
+        Width = boardSettings.Width;
+        Height = boardSettings.Height;
+        ColorCount= boardSettings.ColorCount;
         board = new Tile[Width, poolingHeight];
-        float cameraWidht = Width;
-        float cameraHeight = Height;
-        cameraWidht /= 2;
-        cameraHeight /= 2;
-        Vector3 newPosition = new Vector3(cameraWidht, cameraHeight, -10);
+      
         // Ana kameranın pozisyonunu row sayısına göre değiştiriyoruz uzaklıgınıda ona göre ayarlıyoruz
-        Camera.main.transform.position = newPosition;
-        Camera.main.orthographicSize = cameraHeight;
+        
+        cameraManager = FindObjectOfType<CameraManager>();
+
+        if (cameraManager == null)
+        {
+            Debug.LogError("CameraManager not found in the scene!");
+            return;
+        }
+
+        cameraManager.AdjustCamera(Width, Height);
         for (int x = 0; x < Width; x++)
         {
             for (int y = 0; y < poolingHeight; y++)
@@ -40,7 +51,7 @@ public class BoardManager : MonoBehaviour
                 tileObject.transform.position = new Vector2(x, y);
 
                 Tile tile = tileObject.GetComponent<Tile>();
-                tile.Initialize(new Vector2Int(x, y), Random.Range(0, 4)); // Rastgele renk ata
+                tile.Initialize(new Vector2Int(x, y), Random.Range(0, ColorCount)); // Rastgele renk ata
                 board[x, y] = tile;
             }
         }
@@ -177,7 +188,7 @@ public class BoardManager : MonoBehaviour
                 Tile tile = board[x, y];
                 if (tile.ColorID == -1)
                 {
-                    tile.SetColorID(Random.Range(0, 4)); // Rastgele yeni renk ata
+                    tile.SetColorID(Random.Range(0, ColorCount)); // Rastgele yeni renk ata
                 }
             }
         }

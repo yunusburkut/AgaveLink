@@ -6,10 +6,11 @@ using UnityEngine.UI;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
-
-    public int currentScore = 0;
-    public int scoreGoal = 100;
-    public int remainingMoves = 20;
+    public BoardSettings boardSettings;
+    
+    private int currentScore = 0;
+    private int scoreGoal = 100;
+    private int remainingMoves = 20;
 
     public Sprite[] chipSprites;
 
@@ -30,6 +31,9 @@ public class GameManager : MonoBehaviour
 
         // İlk UI güncellemesi
         UpdateUI();
+        currentScore = boardSettings.currentScore;
+        scoreGoal = boardSettings.scoreGoal;
+        remainingMoves = boardSettings.remainingMoves;  
     }
 
     public Sprite GetChipSprite(int colorID)
